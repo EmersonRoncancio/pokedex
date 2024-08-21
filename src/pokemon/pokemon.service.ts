@@ -2,11 +2,12 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 import { Pokemon } from './entities/pokemon.entity';
-import { Model } from 'mongoose';
+import { isValidObjectId, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
@@ -21,28 +22,67 @@ export class PokemonService {
       const pokemons = await this.PokemonModel.create(createPokemonDto);
       return pokemons;
     } catch (error) {
-      if (error.code === 11000) {
-        throw new BadRequestException(
-          `Atributo existente en la BD ${JSON.stringify(error.keyValue)}`,
-        );
-      }
-      throw new InternalServerErrorException();
+      this.HandleError(error);
     }
   }
 
-  findAll() {
-    return `This action returns all pokemon`;
+  async findAll() {
+    try {
+      const pokemons = await this.PokemonModel.find();
+      return pokemons;
+    } catch (error) {
+      throw new InternalServerErrorException('Internal server Error');
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} pokemon`;
+  async findOne(term: string) {
+    let pokemon: Pokemon | never;
+
+    if (!isNaN(+term)) {
+      pokemon = await this.PokemonModel.findOne({ no: +term });
+    }
+
+    if (!pokemon && isValidObjectId(term)) {
+      pokemon = await this.PokemonModel.findById(term);
+    } else if (!pokemon) {
+      pokemon = await this.PokemonModel.findOne({ nombre: term });
+    }
+
+    if (!pokemon) throw new NotFoundException('Pokemon no encontrado');
+
+    return pokemon;
   }
 
-  update(id: number, updatePokemonDto: UpdatePokemonDto) {
-    return `This action updates a #${id} pokemon`;
+  async update(term: string, updatePokemonDto: UpdatePokemonDto) {
+    const validatePokemon = await this.findOne(term);
+    if (!validatePokemon) throw new NotFoundException('El porkemon no existe');
+
+    try {
+      await validatePokemon.updateOne(updatePokemonDto, {
+        new: true,
+      });
+
+      return { ...validatePokemon.toJSON(), ...updatePokemonDto };
+    } catch (error) {
+      this.HandleError(error);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} pokemon`;
+  async remove(id: string) {
+    // const pokemon = await this.findOne(id);
+    const pokemonDelete = await this.PokemonModel.deleteOne({ _id: id });
+    if (pokemonDelete.deletedCount === 0)
+      throw new BadRequestException('El pokemon no existe');
+
+    return { message: 'Pokemon Eliminado' };
+  }
+
+  private HandleError(error: any) {
+    if (error.code === 11000) {
+      throw new BadRequestException(
+        `Atributo existente en la DB ${JSON.stringify(error.keyValue)}`,
+      );
+    }
+    throw new InternalServerErrorException();
   }
 }
