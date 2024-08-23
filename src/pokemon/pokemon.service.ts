@@ -26,6 +26,16 @@ export class PokemonService {
     }
   }
 
+  async insertAllPokemons(createPokemonDto: CreatePokemonDto[]) {
+    try {
+      await this.PokemonModel.deleteMany();
+      const pokemons = await this.PokemonModel.insertMany(createPokemonDto);
+      return pokemons;
+    } catch (error) {
+      this.HandleError(error);
+    }
+  }
+
   async findAll() {
     try {
       const pokemons = await this.PokemonModel.find();

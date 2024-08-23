@@ -23,6 +23,11 @@ export class PokemonController {
     return this.pokemonService.create(createPokemonDto);
   }
 
+  @Post('/all')
+  insertAll(@Body() createPokemonDto: CreatePokemonDto[]) {
+    return this.pokemonService.insertAllPokemons(createPokemonDto);
+  }
+
   @Get()
   findAll() {
     return this.pokemonService.findAll();
