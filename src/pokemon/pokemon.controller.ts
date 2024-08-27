@@ -15,10 +15,16 @@ import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 import { ParseMongoIdPipe } from 'src/common/pipes/parse-mongo-id.pipe';
 import { PaginationDTO } from 'src/common/dtos/pagination.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('pokemon')
 export class PokemonController {
-  constructor(private readonly pokemonService: PokemonService) {}
+  constructor(
+    private readonly pokemonService: PokemonService,
+    private readonly configService: ConfigService,
+  ) {
+    console.log(configService.get<number>('port'));
+  }
 
   @Post()
   create(@Body() createPokemonDto: CreatePokemonDto) {
