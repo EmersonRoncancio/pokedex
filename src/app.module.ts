@@ -10,10 +10,12 @@ import { JoiValidationSchema } from './common/configs/joi.validation';
   imports: [
     ConfigModule.forRoot({
       load: [envConfigs],
-      validationSchema: [JoiValidationSchema],
+      validationSchema: JoiValidationSchema,
     }),
     PokemonModule,
-    MongooseModule.forRoot(process.env.MONGODB),
+    MongooseModule.forRoot(process.env.MONGODB, {
+      dbName: 'pokemonDB',
+    }),
     CommonModule,
   ],
   controllers: [],
